@@ -28,7 +28,7 @@ jobs:
           cat > 'src/main/AndroidManifest.xml' <<'ESIFILE'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-            <application android:label="Ø¢Ø²Ù…ÙˆÙ† Ù‡Ø´Ø¯Ø§Ø± ESI" android:supportsRtl="true">
+            <application android:label="آزمون هشدار ESI" android:supportsRtl="true">
               <activity android:name=".SmokeActivity" android:exported="true">
                 <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
               </activity>
@@ -53,15 +53,15 @@ jobs:
               @Override public void onCreate(Bundle state) {
                   super.onCreate(state);
                   manager = getSystemService(NotificationManager.class);
-                  manager.createNotificationChannel(new NotificationChannel(CHANNEL, "Ø¢Ø²Ù…ÙˆÙ† Ø§Ø¹Ù„Ø§Ù†", NotificationManager.IMPORTANCE_DEFAULT));
+                  manager.createNotificationChannel(new NotificationChannel(CHANNEL, "آزمون اعلان", NotificationManager.IMPORTANCE_DEFAULT));
                   LinearLayout panel = new LinearLayout(this);
                   panel.setOrientation(LinearLayout.VERTICAL);
                   panel.setGravity(Gravity.CENTER);
                   status = new TextView(this);
-                  status.setText("Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø¨Ù‡ Ø¨Ø§Ø²Ø§Ø± ÙˆØµÙ„ Ù†ÛŒØ³Øª.");
+                  status.setText("این آزمون به بازار وصل نیست.");
                   panel.addView(status);
                   Button test = new Button(this);
-                  test.setText("Ø§Ø±Ø³Ø§Ù„ Ø§Ø¹Ù„Ø§Ù† Ø¢Ø²Ù…Ø§ÛŒØ´ÛŒ");
+                  test.setText("ارسال اعلان آزمایشی");
                   test.setOnClickListener(v -> {
                       if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
                           requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
@@ -74,17 +74,17 @@ jobs:
                   super.onRequestPermissionsResult(code, permissions, grants);
                   if (code != 1) return;
                   if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) postTest();
-                  else status.setText("Ø§Ø¬Ø§Ø²Ù‡Ù” Ø§Ø¹Ù„Ø§Ù† Ø¯Ø§Ø¯Ù‡ Ù†Ø´Ø¯Ø› Ø¯Ø± ØµÙˆØ±Øª ØªÙ…Ø§ÛŒÙ„ Ø§Ø² ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø¨Ø±Ù†Ø§Ù…Ù‡ ÙØ¹Ø§Ù„ Ú©Ù†ÛŒØ¯.");
+                  else status.setText("اجازهٔ اعلان داده نشد؛ در صورت تمایل از تنظیمات برنامه فعال کنید.");
               }
               private void postTest() {
                   if (!manager.areNotificationsEnabled() || manager.getNotificationChannel(CHANNEL).getImportance() == NotificationManager.IMPORTANCE_NONE) {
-                      status.setText("Ø§Ø¹Ù„Ø§Ù† Ø¨Ø±Ù†Ø§Ù…Ù‡ ÛŒØ§ Ú©Ø§Ù†Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ† Ø¯Ø± ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø¨Ø³ØªÙ‡ Ø§Ø³Øª.");
+                      status.setText("اعلان برنامه یا کانال آزمون در تنظیمات بسته است.");
                       return;
                   }
                   manager.notify(1, new Notification.Builder(this, CHANNEL)
-                      .setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("Ù‡Ø´Ø¯Ø§Ø± Ø¢Ø²Ù…Ø§ÛŒØ´ÛŒ ESI")
-                      .setContentText("ØªØ³Øª Ù…Ø­Ù„ÛŒØ› Ø³ÛŒÚ¯Ù†Ø§Ù„ Ø®Ø±ÛŒØ¯ ÛŒØ§ ÙØ±ÙˆØ´ Ù†ÛŒØ³Øª.").setAutoCancel(true).build());
-                  status.setText("Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ø§Ø±Ø³Ø§Ù„ Ø´Ø¯Ø› Ù¾Ù†Ù„ Ø§Ø¹Ù„Ø§Ù† Ú¯ÙˆØ´ÛŒ Ø±Ø§ Ø¨Ø±Ø±Ø³ÛŒ Ú©Ù†ÛŒØ¯.");
+                      .setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("هشدار آزمایشی ESI")
+                      .setContentText("تست محلی؛ سیگنال خرید یا فروش نیست.").setAutoCancel(true).build());
+                  status.setText("درخواست ارسال شد؛ پنل اعلان گوشی را بررسی کنید.");
               }
           }
           ESIFILE
