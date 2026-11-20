@@ -1,0 +1,117 @@
+name: Build test APK
+on: [push, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Prepare test project
+        run: |
+          mkdir -p '.'
+          cat > 'build.gradle' <<'ESIFILE'
+          plugins { id 'com.android.application' version '8.7.3' }
+          android {
+              namespace 'dev.esi.alertsmoke'
+              compileSdk 35
+              defaultConfig { applicationId 'dev.esi.alertsmoke'; minSdk 26; targetSdk 35; versionCode 1; versionName '0.1-test' }
+          }
+          ESIFILE
+          mkdir -p '.'
+          cat > 'settings.gradle' <<'ESIFILE'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+          rootProject.name = 'ESIAlertSmoke'
+          ESIFILE
+          mkdir -p 'src/main'
+          cat > 'src/main/AndroidManifest.xml' <<'ESIFILE'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+            <application android:label="Ø¢Ø²Ù…ÙˆÙ† Ù‡Ø´Ø¯Ø§Ø± ESI" android:supportsRtl="true">
+              <activity android:name=".SmokeActivity" android:exported="true">
+                <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          ESIFILE
+          mkdir -p 'src/main/java/dev/esi/alertsmoke'
+          cat > 'src/main/java/dev/esi/alertsmoke/SmokeActivity.java' <<'ESIFILE'
+          package dev.esi.alertsmoke;
+
+          import android.Manifest;
+          import android.app.*;
+          import android.content.pm.PackageManager;
+          import android.os.*;
+          import android.view.Gravity;
+          import android.widget.*;
+
+          public final class SmokeActivity extends Activity {
+              private static final String CHANNEL = "esi_test_only";
+              private NotificationManager manager;
+              private TextView status;
+              @Override public void onCreate(Bundle state) {
+                  super.onCreate(state);
+                  manager = getSystemService(NotificationManager.class);
+                  manager.createNotificationChannel(new NotificationChannel(CHANNEL, "Ø¢Ø²Ù…ÙˆÙ† Ø§Ø¹Ù„Ø§Ù†", NotificationManager.IMPORTANCE_DEFAULT));
+                  LinearLayout panel = new LinearLayout(this);
+                  panel.setOrientation(LinearLayout.VERTICAL);
+                  panel.setGravity(Gravity.CENTER);
+                  status = new TextView(this);
+                  status.setText("Ø§ÛŒÙ† Ø¢Ø²Ù…ÙˆÙ† Ø¨Ù‡ Ø¨Ø§Ø²Ø§Ø± ÙˆØµÙ„ Ù†ÛŒØ³Øª.");
+                  panel.addView(status);
+                  Button test = new Button(this);
+                  test.setText("Ø§Ø±Ø³Ø§Ù„ Ø§Ø¹Ù„Ø§Ù† Ø¢Ø²Ù…Ø§ÛŒØ´ÛŒ");
+                  test.setOnClickListener(v -> {
+                      if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                          requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
+                      else postTest();
+                  });
+                  panel.addView(test);
+                  setContentView(panel);
+              }
+              @Override public void onRequestPermissionsResult(int code, String[] permissions, int[] grants) {
+                  super.onRequestPermissionsResult(code, permissions, grants);
+                  if (code != 1) return;
+                  if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) postTest();
+                  else status.setText("Ø§Ø¬Ø§Ø²Ù‡Ù” Ø§Ø¹Ù„Ø§Ù† Ø¯Ø§Ø¯Ù‡ Ù†Ø´Ø¯Ø› Ø¯Ø± ØµÙˆØ±Øª ØªÙ…Ø§ÛŒÙ„ Ø§Ø² ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø¨Ø±Ù†Ø§Ù…Ù‡ ÙØ¹Ø§Ù„ Ú©Ù†ÛŒØ¯.");
+              }
+              private void postTest() {
+                  if (!manager.areNotificationsEnabled() || manager.getNotificationChannel(CHANNEL).getImportance() == NotificationManager.IMPORTANCE_NONE) {
+                      status.setText("Ø§Ø¹Ù„Ø§Ù† Ø¨Ø±Ù†Ø§Ù…Ù‡ ÛŒØ§ Ú©Ø§Ù†Ø§Ù„ Ø¢Ø²Ù…ÙˆÙ† Ø¯Ø± ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø¨Ø³ØªÙ‡ Ø§Ø³Øª.");
+                      return;
+                  }
+                  manager.notify(1, new Notification.Builder(this, CHANNEL)
+                      .setSmallIcon(android.R.drawable.ic_dialog_info).setContentTitle("Ù‡Ø´Ø¯Ø§Ø± Ø¢Ø²Ù…Ø§ÛŒØ´ÛŒ ESI")
+                      .setContentText("ØªØ³Øª Ù…Ø­Ù„ÛŒØ› Ø³ÛŒÚ¯Ù†Ø§Ù„ Ø®Ø±ÛŒØ¯ ÛŒØ§ ÙØ±ÙˆØ´ Ù†ÛŒØ³Øª.").setAutoCancel(true).build());
+                  status.setText("Ø¯Ø±Ø®ÙˆØ§Ø³Øª Ø§Ø±Ø³Ø§Ù„ Ø´Ø¯Ø› Ù¾Ù†Ù„ Ø§Ø¹Ù„Ø§Ù† Ú¯ÙˆØ´ÛŒ Ø±Ø§ Ø¨Ø±Ø±Ø³ÛŒ Ú©Ù†ÛŒØ¯.");
+              }
+          }
+          ESIFILE
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: gradle --no-daemon assembleDebug
+      - name: Verify debug APK and record checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apks=(build/outputs/apk/debug/*.apk)
+          test "${#apks[@]}" -eq 1
+          mkdir delivery
+          cp "${apks[0]}" delivery/esi-alert-test.apk
+          cd delivery
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose esi-alert-test.apk
+          sha256sum esi-alert-test.apk > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esi-alert-test
+          path: delivery/
+          if-no-files-found: error
